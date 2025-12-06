@@ -973,7 +973,7 @@ async function hapusSemuaOpname() {
     // HAPUS dataFoto juga
     const store2 = tx("dataFoto", "readwrite");
     await new Promise((resolve, reject) => {
-      const req = store2.clear();
+      const req = store.clear();
       req.onsuccess = resolve;
       req.onerror = () => reject(req.error);
     });
@@ -991,8 +991,8 @@ async function hapusSemuaOpname() {
 
 //export xls
 async function exportOpnameXls() {
-  const ok = await showConfirm("Export semua data opname ke Excel?");
-  if (!ok) return; // user memilih batal
+  const ok = await showConfirm("Export semua data opname ke Excel (.xlsx)?");
+  if (!ok) return;
 
   try {
     const arr = await getAllOpname();
@@ -1007,72 +1007,37 @@ async function exportOpnameXls() {
     const tokoTujuan = u?.toko_tujuan || "Tujuan";
     const tanggal = u?.tanggal || formatDate(new Date());
 
-    // Format nama file
-    const fileName = `DataTB_${tokoAsal}_ke_${tokoTujuan}_${tanggal}.xls`;
+    const fileName = `DataTB_${tokoAsal}_ke_${tokoTujuan}_${tanggal}.xlsx`;
 
-    // Buat HTML Table (Excel-friendly)
-    let table = `
-      <table border="1">
-        <tr>
-          <th>UPC</th>
-          <th>Article</th>
-          <th>Deskripsi</th>
-          <th>Harga</th>
-          <th>Qty</th>
-          <th>Keterangan</th>
-          <th>Timestamp</th>
-          <th>DiInputOleh</th>
-        </tr>
-    `;
+    // Siapkan data array untuk XLSX
+    const rows = arr.map(r => ({
+      UPC: r.upc,
+      Article: r.article,
+      Deskripsi: r.deskripsi,
+      Harga: r.harga,
+      Qty: r.qty != null ? r.qty : "",
+      Keterangan: r.keterangan,
+      Waktu: r.timestamp ? new Date(r.timestamp).toLocaleString() : "",
+      DiInputOleh: u.nama || "-"
+    }));
 
-    for (const r of arr) {
-      const time = r.timestamp ? new Date(r.timestamp).toLocaleString() : "";
-      table += `
-        <tr>
-          <td>${escapeHtml(r.upc)}</td>
-          <td>${escapeHtml(r.article)}</td>
-          <td>${escapeHtml(r.deskripsi)}</td>
-          <td>${escapeHtml(r.harga)}</td>
-          <td>${r.qty != null ? r.qty : ""}</td>
-          <td>${escapeHtml(r.keterangan)}</td>
-          <td>${time}</td>
-          <td>${escapeHtml(u.nama)}</td>
-        </tr>
-      `;
-    }
+    // Buat worksheet
+    const worksheet = XLSX.utils.json_to_sheet(rows);
 
-    table += `</table>`;
+    // Buat workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "DataTB");
 
-    // Jadikan XLS blob
-    const blob = new Blob(
-      [`
-        <html>
-          <head>
-            <meta charset="UTF-8" />
-          </head>
-          <body>${table}</body>
-        </html>
-      `],
-      { type: "application/vnd.ms-excel" }
-    );
+    // Generate file valid XLSX
+    XLSX.writeFile(workbook, fileName);
 
-    const url = URL.createObjectURL(blob);
-
-    // Buat link download
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    showAlert("success", "Export XLS berhasil.");
+    showAlert("success", "Export XLSX berhasil!");
 
   } catch (err) {
     console.error(err);
-    showAlert("error", "Gagal export XLS.");
+    showAlert("error", "Gagal export XLSX.");
   }
 }
-
 //share to wa
 async function shareToWhatsapp() {
   const ok = await showConfirm("Kirim semua data opname ke WhatsApp?");
