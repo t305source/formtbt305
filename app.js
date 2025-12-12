@@ -786,7 +786,7 @@ async function openScannerModal() {
             await stopScannerAndClose();
             beepOK();
             $('inputUPC').value = code;
-            lookup(code);
+            doLookupFromInput();
             return;
           }
         } catch (e) {}
@@ -827,7 +827,7 @@ async function openScannerModal() {
         await stopScannerAndClose();
         beepOK();
         $('inputUPC').value = code;
-        lookup(code);
+        doLookupFromInput();
       }
     });
 
