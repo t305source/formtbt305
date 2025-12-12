@@ -388,7 +388,9 @@ async function lookup(value){
   setFormForUnknown(value);
   highlightMode('UNKNOWN');
   showAlert('info', 'Data tidak ditemukan di opname maupun master. Silakan isi Article/Deskripsi jika ingin menambahkan.')
-  
+  setTimeout(() => {
+    $('inputQty').focus();
+}, 50);
 }
 
 //fungsi tampilkan hasil Opname ke form
@@ -973,7 +975,7 @@ async function hapusSemuaOpname() {
     // HAPUS dataFoto juga
     const store2 = tx("dataFoto", "readwrite");
     await new Promise((resolve, reject) => {
-      const req = store.clear();
+      const req = store2.clear();
       req.onsuccess = resolve;
       req.onerror = () => reject(req.error);
     });
